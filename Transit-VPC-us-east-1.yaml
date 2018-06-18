@@ -1,0 +1,370 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Transit VPC, subnets, route tables, igw, sg
+Parameters: 
+  ID:
+    Description: VPC ID
+    Type: String
+    Default: Transit
+  VPCCidr: 
+    Description: VPC Supernet
+    Type: String
+    Default: 10.100.0.0/16
+  SubnetA1Cidr: 
+    Description: VPC Subnet A-1
+    Type: String
+    Default: 10.100.1.0/24
+  SubnetA2Cidr: 
+    Description: VPC Subnet A-2
+    Type: String
+    Default: 10.100.11.0/24
+  SubnetB1Cidr: 
+    Description: VPC Subnet B-1
+    Type: String
+    Default: 10.100.2.0/24
+  SubnetB2Cidr: 
+    Description: VPC Subnet B-2
+    Type: String
+    Default: 10.100.21.0/24
+Resources:
+  TransitVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidr
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - VPC-${ID}
+          - {ID: !Ref ID}
+  EdgeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: Edge VPC Security Group
+      GroupDescription: Allow SSH and ICMP
+      VpcId: !Ref 'TransitVPC'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: -1
+          CidrIp: 10.0.0.0/8
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - vpc-${ID}-security-group
+          - {ID: !Ref ID}
+  TransitVPCIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - VPC-${ID}-IGW
+          - {ID: !Ref ID}
+  AttachGW:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      InternetGatewayId: !Ref 'TransitVPCIGW'
+  subnetA1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      CidrBlock: !Ref SubnetA1Cidr
+      AvailabilityZone: us-east-1a
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Ref SubnetA1Cidr
+  subnetA1RT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      Tags:
+        - Key: Name
+          Value: !Ref SubnetA1Cidr
+  subnetA1RTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref subnetA1
+      RouteTableId: !Ref subnetA1RT  
+  subnetA2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      CidrBlock: !Ref SubnetA2Cidr
+      AvailabilityZone: us-east-1a
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Ref SubnetA2Cidr
+  subnetA2RT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      Tags:
+        - Key: Name
+          Value: !Ref SubnetA2Cidr
+  subnetA2RTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref subnetA2
+      RouteTableId: !Ref subnetA2RT    
+  subnetB1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      CidrBlock: !Ref SubnetB1Cidr
+      AvailabilityZone: us-east-1b
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Ref SubnetB1Cidr
+  subnetB1RT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      Tags:
+        - Key: Name
+          Value: !Ref SubnetB1Cidr
+  subnetB1RTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref subnetB1
+      RouteTableId: !Ref subnetB1RT  
+  subnetB2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      CidrBlock: !Ref SubnetB2Cidr
+      AvailabilityZone: us-east-1b
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Ref SubnetB2Cidr
+  subnetB2RT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'TransitVPC'
+      Tags:
+        - Key: Name
+          Value: !Ref SubnetB2Cidr
+  subnetB2RTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref subnetB2
+      RouteTableId: !Ref subnetB2RT    
+  privateRouteA2:
+    Type: AWS::EC2::Route
+    DependsOn: vEOSIntfSubnetA2
+    Properties:
+      RouteTableId: !Ref 'subnetA2RT'
+      DestinationCidrBlock: 10.0.0.0/8
+      NetworkInterfaceId: !Ref 'vEOSIntfSubnetA2'
+  privateRouteB2:
+    Type: AWS::EC2::Route
+    DependsOn: vEOSIntfSubnetB2
+    Properties:
+      RouteTableId: !Ref 'subnetB2RT'
+      DestinationCidrBlock: 10.0.0.0/8
+      NetworkInterfaceId: !Ref 'vEOSIntfSubnetB2'
+  publicRouteA2:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGW
+    Properties:
+      RouteTableId: !Ref 'subnetA2RT'
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref 'TransitVPCIGW'
+  publicRouteB2:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGW
+    Properties:
+      RouteTableId: !Ref 'subnetB2RT'
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref 'TransitVPCIGW'  
+  Ec2Instance1a:
+    Type: AWS::EC2::Instance
+    DependsOn: TransitVPCIGW
+    Properties:
+      AvailabilityZone: us-east-1a
+      ImageId: ami-14c5486b
+      InstanceType: t2.micro
+      KeyName: vEOS-Router-Demo
+      UserData: 
+        Fn::Base64: !Sub | 
+          #!/bin/bash -xe 
+          yum update -y 
+          yum --enablerepo=epel install -y iperf iperf3
+      NetworkInterfaces:
+       - NetworkInterfaceId: !Ref VMIntf1a
+         DeviceIndex: 0
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - Host-${ID}-1a
+          - {ID: !Ref ID}
+  VMIntf1a:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SourceDestCheck: false
+      SubnetId: !Ref 'subnetA2'
+      GroupSet:
+      - !Ref EdgeSecurityGroup
+      PrivateIpAddress: !Sub
+      - 10.100.11.10 
+      - {ID: !Ref ID}
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - Host-${ID}a-ETH0
+          - {ID: !Ref ID}
+  Ec2Instance1b:
+    Type: AWS::EC2::Instance
+    DependsOn: TransitVPCIGW
+    Properties:
+      AvailabilityZone: us-east-1b
+      ImageId: ami-14c5486b
+      InstanceType: t2.micro
+      KeyName: vEOS-Router-Demo
+      UserData: 
+        Fn::Base64: !Sub | 
+          #!/bin/bash -xe 
+          yum update -y 
+          yum --enablerepo=epel install -y iperf iperf3
+      NetworkInterfaces:
+       - NetworkInterfaceId: !Ref VMIntf1b
+         DeviceIndex: 0
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - Host-${ID}-1b
+          - {ID: !Ref ID}
+  VMIntf1b:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SourceDestCheck: false
+      SubnetId: !Ref 'subnetB2'
+      GroupSet:
+      - !Ref EdgeSecurityGroup
+      PrivateIpAddress: !Sub
+      - 10.100.21.10 
+      - {ID: !Ref ID}
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - Host-${ID}b-ETH0
+          - {ID: !Ref ID}
+  vRouter1a:
+    Type: AWS::EC2::Instance
+    DependsOn: TransitVPCIGW
+    Properties:
+      AvailabilityZone: us-east-1a
+      ImageId: ami-e7cf4798
+      InstanceType: t2.medium
+      KeyName: vEOS-Router-Demo
+      UserData: 
+        Fn::Base64: "%EOS-STARTUP-CONFIG-START%\nusername cvpadmin privilege 15 secret arista\naaa authorization exec default local\nhostname Arista-Transit-1a\ninterface Ethernet1\nmtu 9001\nno switchport\nip address 10.100.1.6/24\ninterface Ethernet2\nmtu 9001\nno switchport\nip address 10.100.11.6/24\nip route 0.0.0.0/0 Ethernet2 10.100.11.1\nip route 10.1.1.0/24 Ethernet1 10.100.1.1\nip route 10.1.2.0/24 Ethernet1 10.100.1.1\nip routing\n%EOS-STARTUP-CONFIG-END%\n"
+      NetworkInterfaces:
+       - NetworkInterfaceId: !Ref vEOSIntfSubnetA1
+         DeviceIndex: 0
+       - NetworkInterfaceId: !Ref vEOSIntfSubnetA2
+         DeviceIndex: 1
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - vRouter-${ID}-1a
+          - {ID: !Ref ID}
+  vRouter1b:
+    Type: AWS::EC2::Instance
+    DependsOn: TransitVPCIGW
+    Properties:
+      AvailabilityZone: us-east-1b
+      ImageId: ami-e7cf4798
+      InstanceType: t2.medium
+      KeyName: vEOS-Router-Demo
+      UserData: 
+        Fn::Base64: "%EOS-STARTUP-CONFIG-START%\nusername cvpadmin privilege 15 secret arista\naaa authorization exec default local\nhostname Arista-Transit-1b\ninterface Ethernet1\nmtu 9001\nno switchport\nip address 10.100.2.6/24\ninterface Ethernet2\nmtu 9001\nno switchport\nip address 10.100.21.6/24\nip route 0.0.0.0/0 Ethernet2 10.100.21.1\nip route 10.1.0/24 Ethernet1 10.100.2.1\nip route 10.1.2.0/24 Ethernet1 10.100.2.1\nip routing\n%EOS-STARTUP-CONFIG-END%\n"
+      NetworkInterfaces:
+       - NetworkInterfaceId: !Ref vEOSIntfSubnetB1
+         DeviceIndex: 0
+       - NetworkInterfaceId: !Ref vEOSIntfSubnetB2
+         DeviceIndex: 1
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - vRouter-${ID}-1b
+          - {ID: !Ref ID}
+  vEOSIntfSubnetA1:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SourceDestCheck: false
+      SubnetId: !Ref 'subnetA1'
+      GroupSet:
+      - !Ref EdgeSecurityGroup
+      PrivateIpAddress: 10.100.1.6
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - vRouter-${ID}a-ETH1
+          - {ID: !Ref ID}
+  vEOSIntfSubnetA2:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SourceDestCheck: false
+      SubnetId: !Ref 'subnetA2'
+      GroupSet:
+      - !Ref EdgeSecurityGroup
+      PrivateIpAddress: 10.100.11.6
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - vRouter-${ID}a-ETH2
+          - {ID: !Ref ID}
+  vEOSIntfSubnetB1:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SourceDestCheck: false
+      SubnetId: !Ref 'subnetB1'
+      GroupSet:
+      - !Ref EdgeSecurityGroup
+      PrivateIpAddress: 10.100.2.6
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - vRouter-${ID}b-ETH1
+          - {ID: !Ref ID}
+  vEOSIntfSubnetB2:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SourceDestCheck: false
+      SubnetId: !Ref 'subnetB2'
+      GroupSet:
+      - !Ref EdgeSecurityGroup
+      PrivateIpAddress: 10.100.21.6
+      Tags:
+        - Key: Name
+          Value: !Sub
+          - vRouter-${ID}b-ETH2
+          - {ID: !Ref ID}
+  vEOSIntfSubnetA2EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  vEOSIntfSubnetA2EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt vEOSIntfSubnetA2EIP.AllocationId
+      NetworkInterfaceId: !Ref vEOSIntfSubnetA2
+  vEOSIntfSubnetB2EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  vEOSIntfSubnetB2EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt vEOSIntfSubnetB2EIP.AllocationId
+      NetworkInterfaceId: !Ref vEOSIntfSubnetB2
