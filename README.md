@@ -18,8 +18,8 @@ CloudFormation template to ensure that you are referencing RouteTableID's for th
 that was created earlier and also reference the Transit VPC's VPC ID:
      - 'RouteTableId' in the 'peerlinkRouteTransitA1/B1/A2/B2' Resources.
      - 'PeerVpcId' in the 'vpcPeer' Resource.
-
-Then create the stack using the following command, which assumes that AWS CLI is installed:
+     
+   Then create the stack using the following command, which assumes that AWS CLI is installed:
      ```
      aws cloudformation createstack stackname AristaEdgeVPCStack templatebody file://Edge1-VPC-us-east-1.yaml
      ```
