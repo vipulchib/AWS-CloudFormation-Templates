@@ -22,6 +22,7 @@ Then create the stack using the following command, which assumes that AWS CLI is
      ```
      aws cloudformation createstack stackname AristaEdgeVPCStack templatebody file://Edge1-VPC-us-east-1.yaml
      ```
+
 3.  I have provided neccessary configs to build the entire routing topology with GRE interfaces:
      ```
      hostname Arista-Transit-1a
