@@ -1,7 +1,11 @@
 # AWS-CloudFormation-Templates
 Miscellenous AWS CloudFormation Templates
 
-## Transit-VPC-us-east-1.yaml
+## Transit and Edge VPC's with Arista vEOS Routers
+
+AWS CloudFormation templates that we will use will demonstrate the following topology:
+![https://github.com/vipulchib/AWS-CloudFormation-Templates/blob/master/AWS-Transit_and_Edge-VPC_with_Arista.jpg]
+
 Instantiates a Transit VPC with 2 x Arista vEOS Routers and 2 x Amazon Linux instances.  Create a stack using the following command, which assumes that AWS CLI is installed:
      ```
      aws cloudformation createstack stackname AristaTransitVPCStack templatebody file://Transit-VPC-us-east-1.yaml
