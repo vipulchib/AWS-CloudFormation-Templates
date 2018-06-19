@@ -4,6 +4,7 @@ Miscellenous AWS CloudFormation Templates
 ## Transit and Edge VPC's with Arista vEOS Routers
 
 AWS CloudFormation templates that we will use will demonstrate the following topology:
+
 ![Transit and Edge VPC's with Arista vEOS Routers](https://github.com/vipulchib/AWS-CloudFormation-Templates/blob/master/AWS-Transit_and_Edge-VPC_with_Arista.jpg)
 
 1.  First we will instantiate the Transit VPC based on the topology shown above.  Create a stack using the following command, 
