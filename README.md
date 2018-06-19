@@ -38,6 +38,144 @@ Then create the stack using the following command, which assumes that AWS CLI is
    		ip address 10.100.11.6/24
 	!
 	interface Tunnel1
+   		mtu 8973
+   		ip address 10.0.0.0/31
+   		tunnel source 10.100.1.6
+   		tunnel destination 10.1.1.6
+   		tunnel key 101
+	!
+	interface Tunnel2
+   		mtu 8973
+   		ip address 10.0.0.2/31
+   		tunnel source 10.100.1.6
+   		tunnel destination 10.1.2.6
+   		tunnel key 102
+	!
+	ip route 0.0.0.0/0 Ethernet2 10.100.11.1
+	ip route 10.1.1.0/24 Ethernet1 10.100.1.1
+	ip route 10.1.2.0/24 Ethernet1 10.100.1.1
+	!
+	ip routing
+	!
+	router bgp 65100
+   		neighbor edge-routers peer-group
+   		neighbor edge-routers fall-over bfd
+   		neighbor edge-routers maximum-routes 12000
+   		neighbor 10.0.0.1 peer-group edge-routers
+   		neighbor 10.0.0.1 remote-as 65101
+   		neighbor 10.0.0.3 peer-group edge-routers
+   		neighbor 10.0.0.3 remote-as 65101
+	!
+	end
+     ```
+
+     ```
+     hostname Arista-Transit-1b
+     !
+	interface Ethernet1
+   		mtu 9001
+   		no switchport
+   		ip address 10.100.2.6/24
+	!
+	interface Ethernet2
+   		mtu 9001
+   		no switchport
+   		ip address 10.100.21.6/24
+	!
+	interface Tunnel4
+   		mtu 8973
+   		ip address 10.0.0.4/31
+   		tunnel source 10.100.2.6
+   		tunnel destination 10.1.1.6
+   		tunnel key 104
+	!
+	interface Tunnel5
+   		mtu 8973
+   		mtu 8973
+   		ip address 10.0.0.6/31
+   		tunnel source 10.100.2.6
+   		tunnel destination 10.1.2.6
+   		tunnel key 105
+	!
+	ip route 0.0.0.0/0 Ethernet2 10.100.21.1
+	ip route 10.1.1.0/24 Ethernet1 10.100.2.1
+	ip route 10.1.2.0/24 Ethernet1 10.100.2.1
+	!
+	ip routing
+	!
+	router bgp 65100
+   		neighbor edge-routers peer-group
+   		neighbor edge-routers fall-over bfd
+   		neighbor edge-routers maximum-routes 12000
+   		neighbor 10.0.0.5 peer-group edge-routers
+   		neighbor 10.0.0.5 remote-as 65101
+   		neighbor 10.0.0.7 peer-group edge-routers
+   		neighbor 10.0.0.7 remote-as 65101
+	!
+	end
+     ```
+     
+     ```
+     hostname Arista-1a
+     !
+	interface Ethernet1
+   		mtu 9001
+   		no switchport
+   		ip address 10.100.1.6/24
+	!
+	interface Ethernet2
+   		mtu 9001
+   		no switchport
+   		ip address 10.100.11.6/24
+	!
+	interface Tunnel1
+   		description <to-vRouter-1a>
+   		mtu 8973
+   		ip address 10.0.0.0/31
+   		tunnel source 10.100.1.6
+   		tunnel destination 10.1.1.6
+   		tunnel key 101
+	!
+	interface Tunnel2
+   		description <to-vRouter-1b>
+   		mtu 8973
+   		ip address 10.0.0.2/31
+   		tunnel source 10.100.1.6
+   		tunnel destination 10.1.2.6
+   		tunnel key 102
+	!
+	ip route 0.0.0.0/0 Ethernet2 10.100.11.1
+	ip route 10.1.1.0/24 Ethernet1 10.100.1.1
+	ip route 10.1.2.0/24 Ethernet1 10.100.1.1
+	!
+	ip routing
+	!
+	router bgp 65100
+   		neighbor edge-routers peer-group
+   		neighbor edge-routers fall-over bfd
+   		neighbor edge-routers maximum-routes 12000
+   		neighbor 10.0.0.1 peer-group edge-routers
+   		neighbor 10.0.0.1 remote-as 65101
+   		neighbor 10.0.0.3 peer-group edge-routers
+   		neighbor 10.0.0.3 remote-as 65101
+	!
+	end
+     ```
+     
+      ```
+     hostname Arista-Transit-1a
+     !
+	interface Ethernet1
+   		mtu 9001
+   		no switchport
+   		ip address 10.100.1.6/24
+	!
+	interface Ethernet2
+   		mtu 9001
+   		no switchport
+   		ip address 10.100.11.6/24
+	!
+	interface Tunnel1
    		description <to-vRouter-1a>
    		mtu 8973
    		ip address 10.0.0.0/31
