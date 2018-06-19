@@ -4,6 +4,7 @@ Miscellenous AWS CloudFormation Templates
 ## Transit and Edge VPC's with Arista vEOS Routers
 
 AWS CloudFormation templates that we will use will demonstrate the following topology:
+
 ![Transit and Edge VPC's with Arista vEOS Routers](https://github.com/vipulchib/AWS-CloudFormation-Templates/blob/master/AWS-Transit_and_Edge-VPC_with_Arista.jpg)
 
 1.  First we will instantiate the Transit VPC based on the topology shown above.  Create a stack using the following command, 
@@ -65,6 +66,7 @@ Then create the stack using the following command, which assumes that AWS CLI is
    		neighbor 10.0.0.1 remote-as 65101
    		neighbor 10.0.0.3 peer-group edge-routers
    		neighbor 10.0.0.3 remote-as 65101
+		network 10.100.11.0/24
 	!
 	end
      ```
@@ -111,6 +113,7 @@ Then create the stack using the following command, which assumes that AWS CLI is
    		neighbor 10.0.0.5 remote-as 65101
    		neighbor 10.0.0.7 peer-group edge-routers
    		neighbor 10.0.0.7 remote-as 65101
+		network 10.100.21.0/24
 	!
 	end
      ```
@@ -121,90 +124,88 @@ Then create the stack using the following command, which assumes that AWS CLI is
 	interface Ethernet1
    		mtu 9001
    		no switchport
-   		ip address 10.100.1.6/24
+   		ip address 10.1.1.6/24
 	!
 	interface Ethernet2
    		mtu 9001
    		no switchport
-   		ip address 10.100.11.6/24
+   		ip address 10.1.11.6/24
 	!
 	interface Tunnel1
-   		description <to-vRouter-1a>
    		mtu 8973
-   		ip address 10.0.0.0/31
-   		tunnel source 10.100.1.6
-   		tunnel destination 10.1.1.6
+   		ip address 10.0.0.1/31
+   		tunnel source 10.1.1.6
+   		tunnel destination 10.100.1.6
    		tunnel key 101
 	!
-	interface Tunnel2
-   		description <to-vRouter-1b>
+	interface Tunnel4
    		mtu 8973
-   		ip address 10.0.0.2/31
-   		tunnel source 10.100.1.6
-   		tunnel destination 10.1.2.6
-   		tunnel key 102
+   		ip address 10.0.0.5/31
+   		tunnel source 10.1.1.6
+   		tunnel destination 10.100.2.6
+   		tunnel key 104
 	!
-	ip route 0.0.0.0/0 Ethernet2 10.100.11.1
-	ip route 10.1.1.0/24 Ethernet1 10.100.1.1
-	ip route 10.1.2.0/24 Ethernet1 10.100.1.1
+	ip route 0.0.0.0/0 Ethernet2 10.1.11.1
+	ip route 10.100.1.0/24 Ethernet1 10.1.1.1
+	ip route 10.100.2.0/24 Ethernet1 10.1.1.1
 	!
 	ip routing
 	!
-	router bgp 65100
-   		neighbor edge-routers peer-group
-   		neighbor edge-routers fall-over bfd
-   		neighbor edge-routers maximum-routes 12000
-   		neighbor 10.0.0.1 peer-group edge-routers
-   		neighbor 10.0.0.1 remote-as 65101
-   		neighbor 10.0.0.3 peer-group edge-routers
-   		neighbor 10.0.0.3 remote-as 65101
+	router bgp 65101
+   		neighbor transit-routers peer-group
+   		neighbor transit-routers fall-over bfd
+   		neighbor transit-routers maximum-routes 12000
+   		neighbor 10.0.0.0 peer-group transit-routers
+   		neighbor 10.0.0.0 remote-as 65100
+   		neighbor 10.0.0.4 peer-group transit-routers
+   		neighbor 10.0.0.4 remote-as 65100
+   		network 10.1.11.0/24
 	!
 	end
      ```
      
       ```
-     hostname Arista-Transit-1a
+     hostname Arista-1b
      !
 	interface Ethernet1
    		mtu 9001
    		no switchport
-   		ip address 10.100.1.6/24
+   		ip address 10.1.2.6/24
 	!
 	interface Ethernet2
    		mtu 9001
    		no switchport
-   		ip address 10.100.11.6/24
-	!
-	interface Tunnel1
-   		description <to-vRouter-1a>
-   		mtu 8973
-   		ip address 10.0.0.0/31
-   		tunnel source 10.100.1.6
-   		tunnel destination 10.1.1.6
-   		tunnel key 101
+   		ip address 10.1.21.6/24
 	!
 	interface Tunnel2
-   		description <to-vRouter-1b>
    		mtu 8973
-   		ip address 10.0.0.2/31
-   		tunnel source 10.100.1.6
-   		tunnel destination 10.1.2.6
+   		ip address 10.0.0.3/31
+   		tunnel source 10.1.2.6
+   		tunnel destination 10.100.1.6
    		tunnel key 102
 	!
-	ip route 0.0.0.0/0 Ethernet2 10.100.11.1
-	ip route 10.1.1.0/24 Ethernet1 10.100.1.1
-	ip route 10.1.2.0/24 Ethernet1 10.100.1.1
+	interface Tunnel5
+   		mtu 8973
+   		ip address 10.0.0.7/31
+   		tunnel source 10.1.2.6
+   		tunnel destination 10.100.2.6
+   		tunnel key 105
+	!
+	ip route 0.0.0.0/0 Ethernet2 10.1.21.1
+	ip route 10.100.1.0/24 Ethernet1 10.1.2.1
+	ip route 10.100.2.0/24 Ethernet1 10.1.2.1
 	!
 	ip routing
 	!
-	router bgp 65100
-   		neighbor edge-routers peer-group
-   		neighbor edge-routers fall-over bfd
-   		neighbor edge-routers maximum-routes 12000
-   		neighbor 10.0.0.1 peer-group edge-routers
-   		neighbor 10.0.0.1 remote-as 65101
-   		neighbor 10.0.0.3 peer-group edge-routers
-   		neighbor 10.0.0.3 remote-as 65101
+	router bgp 65101
+   		neighbor transit-routers peer-group
+   		neighbor transit-routers fall-over bfd
+   		neighbor transit-routers maximum-routes 12000
+   		neighbor 10.0.0.2 peer-group transit-routers
+   		neighbor 10.0.0.2 remote-as 65100
+   		neighbor 10.0.0.6 peer-group transit-routers
+   		neighbor 10.0.0.6 remote-as 65100
+   		network 10.1.21.0/24
 	!
 	end
      ```
